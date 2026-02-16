@@ -1,0 +1,2217 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0891b2">
+    <title>Achuw Water - Gestion d'Entreprise</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0891b2;
+            --primary-dark: #0e7490;
+            --primary-light: #06b6d4;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --bg: #f8fafc;
+            --bg-card: #ffffff;
+            --text: #0f172a;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 25px rgba(0,0,0,0.1);
+            --radius: 16px;
+        }
+
+        body {
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Layout */
+        .app-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* Header */
+        .app-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1.5rem;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 900;
+            backdrop-filter: blur(10px);
+        }
+
+        .sync-status {
+            font-size: 0.85rem;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Navigation */
+        .nav-tabs {
+            background: white;
+            border-bottom: 2px solid var(--border);
+            position: sticky;
+            top: 85px;
+            z-index: 99;
+            overflow-x: auto;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .nav-tabs::-webkit-scrollbar {
+            display: none;
+        }
+
+        .nav-container {
+            display: flex;
+            gap: 0;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .nav-tab {
+            padding: 1rem 1.5rem;
+            border: none;
+            background: none;
+            font-family: 'Outfit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-light);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .nav-tab:hover {
+            color: var(--primary);
+            background: rgba(8, 145, 178, 0.05);
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: rgba(8, 145, 178, 0.08);
+        }
+
+        /* Content */
+        .content {
+            padding: 2rem 1rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 200px);
+        }
+
+        .page {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -30%;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+
+        .stat-card.success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+        }
+
+        .stat-card.danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        }
+
+        .stat-card.warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+            letter-spacing: -0.02em;
+        }
+
+        .stat-subtitle {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 0.5rem;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            color: var(--text);
+            font-size: 0.95rem;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.875rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.875rem 1.75rem;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(8, 145, 178, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(8, 145, 178, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, var(--success) 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: var(--bg);
+            color: var(--text);
+            border: 2px solid var(--border);
+        }
+
+        .btn-block {
+            width: 100%;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        /* Table */
+        .table-responsive {
+            overflow-x: auto;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background: var(--bg);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 700;
+            color: var(--text);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        tr:hover {
+            background: rgba(8, 145, 178, 0.03);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+        }
+
+        .badge-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        /* Chart Container */
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 1.5rem 0;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .quick-action-btn {
+            padding: 1.5rem;
+            background: white;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            font-family: 'Outfit', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.75rem;
+            text-align: center;
+        }
+
+        .quick-action-btn:hover {
+            border-color: var(--primary);
+            background: rgba(8, 145, 178, 0.05);
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .quick-action-icon {
+            font-size: 2rem;
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+        }
+
+        /* Alert */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .alert-info {
+            background: rgba(8, 145, 178, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(8, 145, 178, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-header {
+                padding: 1rem;
+            }
+
+            .logo {
+                font-size: 1.25rem;
+            }
+
+            .logo-icon {
+                width: 40px;
+                height: 40px;
+            }
+
+            .nav-tab {
+                padding: 0.875rem 1rem;
+                font-size: 0.9rem;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+        }
+
+        .spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid var(--border);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* Tab Content for Reports */
+        .tab-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tab-btn {
+            padding: 0.75rem 1.5rem;
+            border: 2px solid var(--border);
+            background: white;
+            border-radius: 12px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .report-section {
+            display: none;
+        }
+
+        .report-section.active {
+            display: block;
+        }
+
+        /* Action Buttons in Tables */
+        .action-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 0.5rem;
+        }
+
+        .action-btn-edit {
+            background: rgba(8, 145, 178, 0.1);
+            color: var(--primary);
+        }
+
+        .action-btn-delete {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+        }
+
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+
+        /* Number formatting */
+        .number {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-light);
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: var(--radius);
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-footer {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <div class="logo">
+                    <div class="logo-icon">💧</div>
+                    <div>
+                        <div>Achuw Water</div>
+                        <div class="sync-status">
+                            <span id="lastSync">💾 Données sauvegardées localement</span>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: right;">
+                    <div style="font-size: 0.9rem; opacity: 0.9;">Solde actuel</div>
+                    <div class="number" style="font-size: 1.5rem; font-weight: 800;" id="headerBalance">0 CDF</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-tabs">
+            <div class="nav-container">
+                <button class="nav-tab active" data-page="dashboard">🏠 Tableau de bord</button>
+                <button class="nav-tab" data-page="entry">➕ Nouvelle saisie</button>
+                <button class="nav-tab" data-page="reports">📊 Bilans & Rapports</button>
+                <button class="nav-tab" data-page="history">📖 Historique</button>
+                <button class="nav-tab" data-page="settings">⚙️ Paramètres</button>
+            </div>
+        </nav>
+
+        <!-- Content -->
+        <main class="content">
+            <!-- Dashboard Page -->
+            <div class="page active" id="dashboard">
+                <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 2rem;">Tableau de bord</h1>
+                
+                <!-- Today's Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card success">
+                        <div class="stat-label">Recettes du jour</div>
+                        <div class="stat-value number" id="todayRevenue">0</div>
+                        <div class="stat-subtitle">CDF</div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-label">Dépenses du jour</div>
+                        <div class="stat-value number" id="todayExpenses">0</div>
+                        <div class="stat-subtitle">CDF</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Solde du jour</div>
+                        <div class="stat-value number" id="todayBalance">0</div>
+                        <div class="stat-subtitle">CDF</div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-label">Quantité vendue</div>
+                        <div class="stat-value number" id="todayQuantity">0</div>
+                        <div class="stat-subtitle">bidons</div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="card">
+                    <div class="card-header">Actions rapides</div>
+                    <div class="quick-actions">
+                        <button class="quick-action-btn" onclick="app.showPage('entry')">
+                            <span class="quick-action-icon">💰</span>
+                            <span>Enregistrer une vente</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="app.openExpenseEntry()">
+                            <span class="quick-action-icon">💸</span>
+                            <span>Ajouter une dépense</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="app.showPage('reports')">
+                            <span class="quick-action-icon">📊</span>
+                            <span>Voir les bilans</span>
+                        </button>
+                        <button class="quick-action-btn" onclick="app.showPage('history')">
+                            <span class="quick-action-icon">📖</span>
+                            <span>Consulter l'historique</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Monthly Overview -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>Vue mensuelle</span>
+                        <span class="number" style="font-size: 1rem; color: var(--text-light);" id="currentMonth"></span>
+                    </div>
+                    <div class="stats-grid">
+                        <div>
+                            <div style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">Recettes totales</div>
+                            <div class="number" style="font-size: 1.75rem; font-weight: 800; color: var(--success);" id="monthRevenue">0 CDF</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">Dépenses totales</div>
+                            <div class="number" style="font-size: 1.75rem; font-weight: 800; color: var(--danger);" id="monthExpenses">0 CDF</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">Solde mensuel</div>
+                            <div class="number" style="font-size: 1.75rem; font-weight: 800; color: var(--primary);" id="monthBalance">0 CDF</div>
+                        </div>
+                        <div>
+                            <div style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 0.5rem;">Moyenne journalière</div>
+                            <div class="number" style="font-size: 1.75rem; font-weight: 800; color: var(--warning);" id="monthAverage">0 CDF</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="card">
+                    <div class="card-header">Évolution des ventes (7 derniers jours)</div>
+                    <div class="chart-container">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Recent Transactions -->
+                <div class="card">
+                    <div class="card-header">Transactions récentes</div>
+                    <div class="table-responsive">
+                        <table id="recentTransactions">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Montant</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entry Page -->
+            <div class="page" id="entry">
+                <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 2rem;">Nouvelle saisie</h1>
+                
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="app.switchEntryTab('sale')">💰 Vente d'eau</button>
+                    <button class="tab-btn" onclick="app.switchEntryTab('expense')">💸 Dépense</button>
+                </div>
+
+                <!-- Sale Form -->
+                <div class="card report-section active" id="saleForm">
+                    <div class="alert alert-info" style="margin-bottom: 1.5rem;">
+                        💡 <strong>Prix fixe :</strong> 3 bidons = 500 CDF (soit ~166.67 CDF/bidon)
+                    </div>
+                    <form id="saleEntryForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-input" id="saleDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Nombre de bidons vendus</label>
+                                <input type="number" class="form-input number" id="saleQuantity" min="0" step="1" required style="font-size: 1.5rem; font-weight: 700; text-align: center;">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Recette totale</label>
+                            <input type="text" class="form-input number" id="saleTotal" readonly style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: 800; font-size: 1.75rem; text-align: center; border: none;">
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-success btn-block">✅ Enregistrer la vente du jour</button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Expense Form -->
+                <div class="card report-section" id="expenseForm">
+                    <form id="expenseEntryForm">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Date</label>
+                                <input type="date" class="form-input" id="expenseDate" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Montant des dépenses (CDF)</label>
+                                <input type="number" class="form-input number" id="expenseAmount" min="0" required style="font-size: 1.5rem; font-weight: 700; text-align: center;">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Catégorie</label>
+                            <select class="form-select" id="expenseCategory" required>
+                                <option value="">-- Sélectionner --</option>
+                                <option value="Achat carburant">Achat carburant (groupe électrogène)</option>
+                                <option value="Entretien équipement">Entretien équipement</option>
+                                <option value="Salaire personnel">Salaire personnel</option>
+                                <option value="Achat matériel">Achat matériel</option>
+                                <option value="Transport">Transport</option>
+                                <option value="Électricité">Électricité</option>
+                                <option value="Autres dépenses">Autres dépenses</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Description / Notes (optionnel)</label>
+                            <textarea class="form-textarea" id="expenseDescription" placeholder="Ex: Full carburant pour le groupe, Réparation pompe..."></textarea>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-danger btn-block">💸 Enregistrer la dépense du jour</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Reports Page -->
+            <div class="page" id="reports">
+                <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 2rem;">Bilans & Rapports</h1>
+                
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="app.switchReportTab('daily')">📅 Journalier</button>
+                    <button class="tab-btn" onclick="app.switchReportTab('weekly')">📊 Hebdomadaire</button>
+                    <button class="tab-btn" onclick="app.switchReportTab('monthly')">📈 Mensuel</button>
+                    <button class="tab-btn" onclick="app.switchReportTab('quarterly')">📉 Trimestriel</button>
+                    <button class="tab-btn" onclick="app.switchReportTab('comparison')">🔄 Comparaison</button>
+                </div>
+
+                <!-- Daily Report -->
+                <div class="report-section active" id="dailyReport">
+                    <div class="filter-bar">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Sélectionner une date</label>
+                                <input type="date" class="form-input" id="dailyReportDate">
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end;">
+                                <button class="btn btn-primary" onclick="app.generateDailyReport()">📊 Générer le rapport</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="dailyReportContent"></div>
+                </div>
+
+                <!-- Weekly Report -->
+                <div class="report-section" id="weeklyReport">
+                    <div class="filter-bar">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Date de début</label>
+                                <input type="date" class="form-input" id="weeklyStartDate">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Date de fin</label>
+                                <input type="date" class="form-input" id="weeklyEndDate">
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end;">
+                                <button class="btn btn-primary" onclick="app.generateWeeklyReport()">📊 Générer le rapport</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="weeklyReportContent"></div>
+                </div>
+
+                <!-- Monthly Report -->
+                <div class="report-section" id="monthlyReport">
+                    <div class="filter-bar">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Mois</label>
+                                <input type="month" class="form-input" id="monthlyReportMonth">
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end;">
+                                <button class="btn btn-primary" onclick="app.generateMonthlyReport()">📊 Générer le rapport</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="monthlyReportContent"></div>
+                </div>
+
+                <!-- Quarterly Report -->
+                <div class="report-section" id="quarterlyReport">
+                    <div class="filter-bar">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Année</label>
+                                <input type="number" class="form-input" id="quarterYear" min="2020" max="2030">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Trimestre</label>
+                                <select class="form-select" id="quarterSelect">
+                                    <option value="1">T1 (Jan-Mar)</option>
+                                    <option value="2">T2 (Avr-Juin)</option>
+                                    <option value="3">T3 (Juil-Sept)</option>
+                                    <option value="4">T4 (Oct-Déc)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end;">
+                                <button class="btn btn-primary" onclick="app.generateQuarterlyReport()">📊 Générer le rapport</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="quarterlyReportContent"></div>
+                </div>
+
+                <!-- Comparison Report -->
+                <div class="report-section" id="comparisonReport">
+                    <div class="filter-bar">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Période 1 (Mois)</label>
+                                <input type="month" class="form-input" id="compPeriod1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Période 2 (Mois)</label>
+                                <input type="month" class="form-input" id="compPeriod2">
+                            </div>
+                            <div class="form-group" style="display: flex; align-items: flex-end;">
+                                <button class="btn btn-primary" onclick="app.generateComparisonReport()">🔄 Comparer</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="comparisonReportContent"></div>
+                </div>
+            </div>
+
+            <!-- History Page -->
+            <div class="page" id="history">
+                <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 2rem;">Historique des transactions</h1>
+                
+                <div class="filter-bar">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">Date début</label>
+                            <input type="date" class="form-input" id="historyStartDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Date fin</label>
+                            <input type="date" class="form-input" id="historyEndDate">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="historyType">
+                                <option value="all">Tous</option>
+                                <option value="sale">Ventes</option>
+                                <option value="expense">Dépenses</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: flex-end;">
+                            <button class="btn btn-primary" onclick="app.filterHistory()">🔍 Filtrer</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="table-responsive">
+                        <table id="historyTable">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Quantité</th>
+                                    <th>Montant (CDF)</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-success" onclick="app.exportToExcel()">📊 Exporter Excel</button>
+                    <button class="btn btn-primary" onclick="app.exportToPDF()">📄 Exporter PDF</button>
+                </div>
+            </div>
+
+            <!-- Settings Page -->
+            <div class="page" id="settings">
+                <h1 style="font-size: 2rem; font-weight: 800; margin-bottom: 2rem;">Paramètres</h1>
+                
+                <div class="card">
+                    <div class="card-header">⚙️ Configuration</div>
+                    <form id="settingsForm">
+                        <div class="alert alert-info">
+                            ☀️ <strong>Système actuel :</strong> Panneaux solaires (groupe électrogène occasionnel en saison sèche)<br>
+                            💰 <strong>Prix fixe :</strong> 3 bidons = 500 CDF (soit 166.67 CDF/bidon)
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Taux de change USD/CDF</label>
+                            <input type="number" class="form-input number" id="settingsExchangeRate" min="0" step="0.01">
+                        </div>
+
+                        <div class="card-header" style="margin-top: 2rem;">🏢 Informations entreprise</div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Nom de l'entreprise</label>
+                                <input type="text" class="form-input" id="settingsCompanyName">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Localisation</label>
+                                <input type="text" class="form-input" id="settingsLocation">
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button type="submit" class="btn btn-success btn-block">💾 Sauvegarder les paramètres</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">📊 Gestion des données</div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" onclick="app.backupData()">💾 Sauvegarder les données</button>
+                        <button class="btn btn-secondary" onclick="app.importData()">📥 Importer des données</button>
+                        <button class="btn btn-danger" onclick="app.clearAllData()">🗑️ Effacer toutes les données</button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">ℹ️ À propos</div>
+                    <p style="color: var(--text-light); line-height: 1.8;">
+                        <strong>Achuw Water Management App</strong><br>
+                        Version 1.0.0<br>
+                        Application de gestion pour entreprise de vente d'eau de forage<br>
+                        Stockage local sécurisé - Fonctionne hors ligne
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Edit Modal -->
+    <div class="modal" id="editModal">
+        <div class="modal-content">
+            <div class="modal-header">Modifier la transaction</div>
+            <form id="editForm">
+                <input type="hidden" id="editId">
+                <div class="form-group">
+                    <label class="form-label">Date</label>
+                    <input type="date" class="form-input" id="editDate" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Montant (CDF)</label>
+                    <input type="number" class="form-input number" id="editAmount" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Description</label>
+                    <input type="text" class="form-input" id="editDescription" required>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="app.closeEditModal()">Annuler</button>
+                    <button type="submit" class="btn btn-success">💾 Sauvegarder</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // IndexedDB Setup
+        class Database {
+            constructor() {
+                this.dbName = 'AchuwWaterDB';
+                this.version = 1;
+                this.db = null;
+            }
+
+            async init() {
+                return new Promise((resolve, reject) => {
+                    const request = indexedDB.open(this.dbName, this.version);
+
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => {
+                        this.db = request.result;
+                        resolve(this.db);
+                    };
+
+                    request.onupgradeneeded = (event) => {
+                        const db = event.target.result;
+
+                        // Sales store
+                        if (!db.objectStoreNames.contains('sales')) {
+                            const salesStore = db.createObjectStore('sales', { keyPath: 'id', autoIncrement: true });
+                            salesStore.createIndex('date', 'date', { unique: false });
+                        }
+
+                        // Expenses store
+                        if (!db.objectStoreNames.contains('expenses')) {
+                            const expensesStore = db.createObjectStore('expenses', { keyPath: 'id', autoIncrement: true });
+                            expensesStore.createIndex('date', 'date', { unique: false });
+                        }
+
+                        // Generator store
+                        if (!db.objectStoreNames.contains('generator')) {
+                            const genStore = db.createObjectStore('generator', { keyPath: 'id', autoIncrement: true });
+                            genStore.createIndex('date', 'date', { unique: false });
+                        }
+
+                        // Settings store
+                        if (!db.objectStoreNames.contains('settings')) {
+                            db.createObjectStore('settings', { keyPath: 'key' });
+                        }
+                    };
+                });
+            }
+
+            async add(storeName, data) {
+                const transaction = this.db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                return store.add(data);
+            }
+
+            async getAll(storeName) {
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                return new Promise((resolve, reject) => {
+                    const request = store.getAll();
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async update(storeName, data) {
+                const transaction = this.db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                return store.put(data);
+            }
+
+            async delete(storeName, id) {
+                const transaction = this.db.transaction([storeName], 'readwrite');
+                const store = transaction.objectStore(storeName);
+                return store.delete(id);
+            }
+
+            async getSetting(key) {
+                const transaction = this.db.transaction(['settings'], 'readonly');
+                const store = transaction.objectStore('settings');
+                return new Promise((resolve, reject) => {
+                    const request = store.get(key);
+                    request.onsuccess = () => resolve(request.result?.value);
+                    request.onerror = () => reject(request.error);
+                });
+            }
+
+            async setSetting(key, value) {
+                const transaction = this.db.transaction(['settings'], 'readwrite');
+                const store = transaction.objectStore('settings');
+                return store.put({ key, value });
+            }
+        }
+
+        // Main App
+        class AchuwWaterApp {
+            constructor() {
+                this.db = new Database();
+                this.currentPage = 'dashboard';
+                this.chart = null;
+                this.settings = {
+                    defaultPrice: 150,
+                    exchangeRate: 2850,
+                    companyName: 'Achuw Water',
+                    location: 'Lupundu / Parcelle Sharij 01'
+                };
+            }
+
+            async init() {
+                await this.db.init();
+                await this.loadSettings();
+                this.setupEventListeners();
+                this.setDefaultDates();
+                await this.refreshDashboard();
+                this.registerServiceWorker();
+            }
+
+            async loadSettings() {
+                const defaultPrice = await this.db.getSetting('defaultPrice');
+                const exchangeRate = await this.db.getSetting('exchangeRate');
+                const companyName = await this.db.getSetting('companyName');
+                const location = await this.db.getSetting('location');
+
+                // Prix fixe: 3 bidons = 500 CDF
+                this.settings.defaultPrice = 166.67;
+                if (exchangeRate) this.settings.exchangeRate = exchangeRate;
+                if (companyName) this.settings.companyName = companyName;
+                if (location) this.settings.location = location;
+
+                // Update form defaults
+                document.getElementById('settingsExchangeRate').value = this.settings.exchangeRate;
+                document.getElementById('settingsCompanyName').value = this.settings.companyName;
+                document.getElementById('settingsLocation').value = this.settings.location;
+            }
+
+            setupEventListeners() {
+                // Navigation
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    tab.addEventListener('click', () => this.showPage(tab.dataset.page));
+                });
+
+                // Forms
+                document.getElementById('saleEntryForm').addEventListener('submit', (e) => this.handleSaleSubmit(e));
+                document.getElementById('expenseEntryForm').addEventListener('submit', (e) => this.handleExpenseSubmit(e));
+                document.getElementById('settingsForm').addEventListener('submit', (e) => this.handleSettingsSubmit(e));
+                document.getElementById('editForm').addEventListener('submit', (e) => this.handleEditSubmit(e));
+
+                // Auto-calculate sale total with fixed price
+                document.getElementById('saleQuantity').addEventListener('input', () => this.calculateSaleTotal());
+            }
+
+            setDefaultDates() {
+                const today = new Date().toISOString().split('T')[0];
+                const currentMonth = new Date().toISOString().slice(0, 7);
+
+                document.getElementById('saleDate').value = today;
+                document.getElementById('expenseDate').value = today;
+                document.getElementById('dailyReportDate').value = today;
+                document.getElementById('monthlyReportMonth').value = currentMonth;
+                document.getElementById('quarterYear').value = new Date().getFullYear();
+                document.getElementById('compPeriod1').value = currentMonth;
+                document.getElementById('compPeriod2').value = currentMonth;
+
+                // Set weekly dates
+                const weekAgo = new Date();
+                weekAgo.setDate(weekAgo.getDate() - 7);
+                document.getElementById('weeklyStartDate').value = weekAgo.toISOString().split('T')[0];
+                document.getElementById('weeklyEndDate').value = today;
+
+                // Set history dates
+                const monthAgo = new Date();
+                monthAgo.setMonth(monthAgo.getMonth() - 1);
+                document.getElementById('historyStartDate').value = monthAgo.toISOString().split('T')[0];
+                document.getElementById('historyEndDate').value = today;
+            }
+
+            showPage(pageId) {
+                document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+                document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+
+                document.getElementById(pageId).classList.add('active');
+                document.querySelector(`[data-page="${pageId}"]`).classList.add('active');
+
+                this.currentPage = pageId;
+
+                if (pageId === 'history') {
+                    this.loadHistory();
+                }
+            }
+
+            switchEntryTab(type) {
+                document.querySelectorAll('#entry .tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('#entry .report-section').forEach(section => section.classList.remove('active'));
+
+                event.target.classList.add('active');
+                
+                if (type === 'sale') document.getElementById('saleForm').classList.add('active');
+                else if (type === 'expense') document.getElementById('expenseForm').classList.add('active');
+                else if (type === 'generator') document.getElementById('generatorForm').classList.add('active');
+            }
+
+            switchReportTab(type) {
+                document.querySelectorAll('#reports .tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('#reports .report-section').forEach(section => section.classList.remove('active'));
+
+                event.target.classList.add('active');
+                document.getElementById(`${type}Report`).classList.add('active');
+            }
+
+            calculateSaleTotal() {
+                const quantity = parseFloat(document.getElementById('saleQuantity').value) || 0;
+                const price = this.settings.defaultPrice; // Prix fixe: 166.67 CDF
+                const total = Math.round(quantity * price);
+                document.getElementById('saleTotal').value = this.formatNumber(total) + ' CDF';
+            }
+
+            async handleSaleSubmit(e) {
+                e.preventDefault();
+
+                const quantity = parseFloat(document.getElementById('saleQuantity').value);
+                const price = this.settings.defaultPrice; // Prix fixe: 166.67 CDF
+                const total = Math.round(quantity * price);
+
+                const sale = {
+                    date: document.getElementById('saleDate').value,
+                    quantity: quantity,
+                    price: price,
+                    total: total,
+                    container: 'Bidon 20L',
+                    payment: 'Cash',
+                    notes: '',
+                    timestamp: new Date().toISOString()
+                };
+
+                await this.db.add('sales', sale);
+                
+                this.showAlert('✅ Vente du jour enregistrée avec succès!', 'success');
+                e.target.reset();
+                this.setDefaultDates();
+                document.getElementById('saleTotal').value = '0 CDF';
+                await this.refreshDashboard();
+            }
+
+            async handleExpenseSubmit(e) {
+                e.preventDefault();
+
+                const expense = {
+                    date: document.getElementById('expenseDate').value,
+                    category: document.getElementById('expenseCategory').value,
+                    amount: parseFloat(document.getElementById('expenseAmount').value),
+                    description: document.getElementById('expenseDescription').value,
+                    notes: '',
+                    timestamp: new Date().toISOString()
+                };
+
+                await this.db.add('expenses', expense);
+                
+                this.showAlert('✅ Dépense du jour enregistrée avec succès!', 'success');
+                e.target.reset();
+                this.setDefaultDates();
+                await this.refreshDashboard();
+            }
+
+            async handleSettingsSubmit(e) {
+                e.preventDefault();
+
+                this.settings.exchangeRate = parseFloat(document.getElementById('settingsExchangeRate').value);
+                this.settings.companyName = document.getElementById('settingsCompanyName').value;
+                this.settings.location = document.getElementById('settingsLocation').value;
+
+                await this.db.setSetting('exchangeRate', this.settings.exchangeRate);
+                await this.db.setSetting('companyName', this.settings.companyName);
+                await this.db.setSetting('location', this.settings.location);
+
+                this.showAlert('✅ Paramètres sauvegardés!', 'success');
+            }
+
+            async refreshDashboard() {
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                // Today's stats
+                const today = new Date().toISOString().split('T')[0];
+                const todaySales = sales.filter(s => s.date === today);
+                const todayExpenses = expenses.filter(e => e.date === today);
+
+                const todayRevenue = todaySales.reduce((sum, s) => sum + s.total, 0);
+                const todayExpense = todayExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const todayBalance = todayRevenue - todayExpense;
+                const todayQuantity = todaySales.reduce((sum, s) => sum + s.quantity, 0);
+
+                document.getElementById('todayRevenue').textContent = this.formatNumber(todayRevenue);
+                document.getElementById('todayExpenses').textContent = this.formatNumber(todayExpense);
+                document.getElementById('todayBalance').textContent = this.formatNumber(todayBalance);
+                document.getElementById('todayQuantity').textContent = this.formatNumber(todayQuantity);
+
+                // Monthly stats
+                const currentMonth = new Date().toISOString().slice(0, 7);
+                const monthSales = sales.filter(s => s.date.startsWith(currentMonth));
+                const monthExpenses = expenses.filter(e => e.date.startsWith(currentMonth));
+
+                const monthRevenue = monthSales.reduce((sum, s) => sum + s.total, 0);
+                const monthExpense = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const monthBalance = monthRevenue - monthExpense;
+                const daysInMonth = new Date().getDate();
+                const monthAverage = daysInMonth > 0 ? monthRevenue / daysInMonth : 0;
+
+                document.getElementById('currentMonth').textContent = this.formatMonth(currentMonth);
+                document.getElementById('monthRevenue').textContent = this.formatNumber(monthRevenue) + ' CDF';
+                document.getElementById('monthExpenses').textContent = this.formatNumber(monthExpense) + ' CDF';
+                document.getElementById('monthBalance').textContent = this.formatNumber(monthBalance) + ' CDF';
+                document.getElementById('monthAverage').textContent = this.formatNumber(monthAverage) + ' CDF';
+
+                // Total balance
+                const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+                const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
+                const totalBalance = totalRevenue - totalExpense;
+
+                document.getElementById('headerBalance').textContent = this.formatNumber(totalBalance) + ' CDF';
+
+                // Recent transactions
+                this.loadRecentTransactions(sales, expenses);
+
+                // Chart
+                this.updateChart(sales);
+            }
+
+            loadRecentTransactions(sales, expenses) {
+                const tbody = document.querySelector('#recentTransactions tbody');
+                tbody.innerHTML = '';
+
+                const allTransactions = [
+                    ...sales.map(s => ({ ...s, type: 'sale', typeLabel: 'Vente' })),
+                    ...expenses.map(e => ({ ...e, type: 'expense', typeLabel: 'Dépense' }))
+                ].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+
+                allTransactions.forEach(t => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${this.formatDate(t.date)}</td>
+                        <td><span class="badge ${t.type === 'sale' ? 'badge-success' : 'badge-danger'}">${t.typeLabel}</span></td>
+                        <td>${t.description || 'Vente d\'eau'}</td>
+                        <td class="number">${t.type === 'sale' ? this.formatNumber(t.total) : this.formatNumber(t.amount)} CDF</td>
+                    `;
+                });
+            }
+
+            updateChart(sales) {
+                const ctx = document.getElementById('salesChart');
+                
+                // Get last 7 days
+                const days = [];
+                const data = [];
+                
+                for (let i = 6; i >= 0; i--) {
+                    const date = new Date();
+                    date.setDate(date.getDate() - i);
+                    const dateStr = date.toISOString().split('T')[0];
+                    days.push(this.formatDateShort(dateStr));
+                    
+                    const daySales = sales.filter(s => s.date === dateStr);
+                    const dayTotal = daySales.reduce((sum, s) => sum + s.total, 0);
+                    data.push(dayTotal);
+                }
+
+                if (this.chart) {
+                    this.chart.destroy();
+                }
+
+                this.chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: days,
+                        datasets: [{
+                            label: 'Recettes (CDF)',
+                            data: data,
+                            borderColor: '#0891b2',
+                            backgroundColor: 'rgba(8, 145, 178, 0.1)',
+                            borderWidth: 3,
+                            tension: 0.4,
+                            fill: true,
+                            pointRadius: 6,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: '#0891b2',
+                            pointBorderColor: '#fff',
+                            pointBorderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: (value) => this.formatNumber(value)
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            async loadHistory() {
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                const tbody = document.querySelector('#historyTable tbody');
+                tbody.innerHTML = '';
+
+                const allTransactions = [
+                    ...sales.map(s => ({ ...s, type: 'sale', typeLabel: 'Vente', storeName: 'sales' })),
+                    ...expenses.map(e => ({ ...e, type: 'expense', typeLabel: 'Dépense', storeName: 'expenses' }))
+                ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                allTransactions.forEach(t => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${this.formatDate(t.date)}</td>
+                        <td><span class="badge ${t.type === 'sale' ? 'badge-success' : 'badge-danger'}">${t.typeLabel}</span></td>
+                        <td>${t.description || t.category || 'Vente d\'eau'}</td>
+                        <td class="number">${t.quantity || '-'}</td>
+                        <td class="number">${t.total ? this.formatNumber(t.total) : (t.amount ? this.formatNumber(t.amount) : '-')}</td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="app.editTransaction('${t.storeName}', ${t.id})">✏️ Modifier</button>
+                            <button class="action-btn action-btn-delete" onclick="app.deleteTransaction('${t.storeName}', ${t.id})">🗑️ Supprimer</button>
+                        </td>
+                    `;
+                });
+            }
+
+            async filterHistory() {
+                const startDate = document.getElementById('historyStartDate').value;
+                const endDate = document.getElementById('historyEndDate').value;
+                const type = document.getElementById('historyType').value;
+
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                let allTransactions = [];
+
+                if (type === 'all' || type === 'sale') {
+                    allTransactions.push(...sales.map(s => ({ ...s, type: 'sale', typeLabel: 'Vente', storeName: 'sales' })));
+                }
+                if (type === 'all' || type === 'expense') {
+                    allTransactions.push(...expenses.map(e => ({ ...e, type: 'expense', typeLabel: 'Dépense', storeName: 'expenses' })));
+                }
+
+                allTransactions = allTransactions.filter(t => {
+                    const tDate = t.date;
+                    return tDate >= startDate && tDate <= endDate;
+                }).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                const tbody = document.querySelector('#historyTable tbody');
+                tbody.innerHTML = '';
+
+                allTransactions.forEach(t => {
+                    const row = tbody.insertRow();
+                    row.innerHTML = `
+                        <td>${this.formatDate(t.date)}</td>
+                        <td><span class="badge ${t.type === 'sale' ? 'badge-success' : 'badge-danger'}">${t.typeLabel}</span></td>
+                        <td>${t.description || t.category || 'Vente d\'eau'}</td>
+                        <td class="number">${t.quantity || '-'}</td>
+                        <td class="number">${t.total ? this.formatNumber(t.total) : (t.amount ? this.formatNumber(t.amount) : '-')}</td>
+                        <td>
+                            <button class="action-btn action-btn-edit" onclick="app.editTransaction('${t.storeName}', ${t.id})">✏️ Modifier</button>
+                            <button class="action-btn action-btn-delete" onclick="app.deleteTransaction('${t.storeName}', ${t.id})">🗑️ Supprimer</button>
+                        </td>
+                    `;
+                });
+            }
+
+            async editTransaction(storeName, id) {
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.get(id);
+
+                request.onsuccess = () => {
+                    const data = request.result;
+                    document.getElementById('editId').value = id;
+                    document.getElementById('editId').dataset.store = storeName;
+                    document.getElementById('editDate').value = data.date;
+                    document.getElementById('editAmount').value = data.total || data.amount;
+                    document.getElementById('editDescription').value = data.description || data.category || 'Vente d\'eau';
+                    document.getElementById('editModal').classList.add('active');
+                };
+            }
+
+            async handleEditSubmit(e) {
+                e.preventDefault();
+
+                const id = parseInt(document.getElementById('editId').value);
+                const storeName = document.getElementById('editId').dataset.store;
+                
+                const transaction = this.db.transaction([storeName], 'readonly');
+                const store = transaction.objectStore(storeName);
+                const request = store.get(id);
+
+                request.onsuccess = async () => {
+                    const data = request.result;
+                    data.date = document.getElementById('editDate').value;
+                    
+                    if (storeName === 'sales') {
+                        data.total = parseFloat(document.getElementById('editAmount').value);
+                    } else {
+                        data.amount = parseFloat(document.getElementById('editAmount').value);
+                    }
+                    
+                    if (storeName === 'sales') {
+                        data.notes = document.getElementById('editDescription').value;
+                    } else {
+                        data.description = document.getElementById('editDescription').value;
+                    }
+
+                    await this.db.update(storeName, data);
+                    this.closeEditModal();
+                    this.showAlert('✅ Transaction modifiée!', 'success');
+                    await this.loadHistory();
+                    await this.refreshDashboard();
+                };
+            }
+
+            closeEditModal() {
+                document.getElementById('editModal').classList.remove('active');
+            }
+
+            async deleteTransaction(storeName, id) {
+                if (confirm('Êtes-vous sûr de vouloir supprimer cette transaction ?')) {
+                    await this.db.delete(storeName, id);
+                    this.showAlert('✅ Transaction supprimée!', 'success');
+                    await this.loadHistory();
+                    await this.refreshDashboard();
+                }
+            }
+
+            async generateDailyReport() {
+                const date = document.getElementById('dailyReportDate').value;
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                const daySales = sales.filter(s => s.date === date);
+                const dayExpenses = expenses.filter(e => e.date === date);
+
+                const revenue = daySales.reduce((sum, s) => sum + s.total, 0);
+                const expense = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const balance = revenue - expense;
+                const quantity = daySales.reduce((sum, s) => sum + s.quantity, 0);
+
+                const content = document.getElementById('dailyReportContent');
+                content.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">Rapport du ${this.formatDate(date)}</div>
+                        <div class="stats-grid">
+                            <div class="stat-card success">
+                                <div class="stat-label">Recettes</div>
+                                <div class="stat-value number">${this.formatNumber(revenue)}</div>
+                                <div class="stat-subtitle">CDF (${this.formatNumber(revenue / this.settings.exchangeRate)} USD)</div>
+                            </div>
+                            <div class="stat-card danger">
+                                <div class="stat-label">Dépenses</div>
+                                <div class="stat-value number">${this.formatNumber(expense)}</div>
+                                <div class="stat-subtitle">CDF</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Solde</div>
+                                <div class="stat-value number">${this.formatNumber(balance)}</div>
+                                <div class="stat-subtitle">CDF</div>
+                            </div>
+                            <div class="stat-card warning">
+                                <div class="stat-label">Quantité vendue</div>
+                                <div class="stat-value number">${this.formatNumber(quantity)}</div>
+                                <div class="stat-subtitle">bidons</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            async generateWeeklyReport() {
+                const startDate = document.getElementById('weeklyStartDate').value;
+                const endDate = document.getElementById('weeklyEndDate').value;
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                const weekSales = sales.filter(s => s.date >= startDate && s.date <= endDate);
+                const weekExpenses = expenses.filter(e => e.date >= startDate && e.date <= endDate);
+
+                const revenue = weekSales.reduce((sum, s) => sum + s.total, 0);
+                const expense = weekExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const balance = revenue - expense;
+                const quantity = weekSales.reduce((sum, s) => sum + s.quantity, 0);
+                const days = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) + 1;
+                const average = days > 0 ? revenue / days : 0;
+
+                const content = document.getElementById('weeklyReportContent');
+                content.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">Rapport du ${this.formatDate(startDate)} au ${this.formatDate(endDate)}</div>
+                        <div class="stats-grid">
+                            <div class="stat-card success">
+                                <div class="stat-label">Recettes totales</div>
+                                <div class="stat-value number">${this.formatNumber(revenue)}</div>
+                                <div class="stat-subtitle">CDF (${this.formatNumber(revenue / this.settings.exchangeRate)} USD)</div>
+                            </div>
+                            <div class="stat-card danger">
+                                <div class="stat-label">Dépenses totales</div>
+                                <div class="stat-value number">${this.formatNumber(expense)}</div>
+                                <div class="stat-subtitle">CDF</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Solde</div>
+                                <div class="stat-value number">${this.formatNumber(balance)}</div>
+                                <div class="stat-subtitle">CDF</div>
+                            </div>
+                            <div class="stat-card warning">
+                                <div class="stat-label">Quantité vendue</div>
+                                <div class="stat-value number">${this.formatNumber(quantity)}</div>
+                                <div class="stat-subtitle">bidons (${this.formatNumber(average)} CDF/jour)</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            async generateMonthlyReport() {
+                const month = document.getElementById('monthlyReportMonth').value;
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                const monthSales = sales.filter(s => s.date.startsWith(month));
+                const monthExpenses = expenses.filter(e => e.date.startsWith(month));
+
+                const revenue = monthSales.reduce((sum, s) => sum + s.total, 0);
+                const expense = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const balance = revenue - expense;
+                const quantity = monthSales.reduce((sum, s) => sum + s.quantity, 0);
+                
+                const daysWithSales = new Set(monthSales.map(s => s.date)).size;
+                const average = daysWithSales > 0 ? revenue / daysWithSales : 0;
+
+                const content = document.getElementById('monthlyReportContent');
+                content.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">Rapport mensuel - ${this.formatMonth(month)}</div>
+                        <div class="stats-grid">
+                            <div class="stat-card success">
+                                <div class="stat-label">Recettes totales</div>
+                                <div class="stat-value number">${this.formatNumber(revenue)}</div>
+                                <div class="stat-subtitle">CDF (${this.formatNumber(revenue / this.settings.exchangeRate)} USD)</div>
+                            </div>
+                            <div class="stat-card danger">
+                                <div class="stat-label">Dépenses totales</div>
+                                <div class="stat-value number">${this.formatNumber(expense)}</div>
+                                <div class="stat-subtitle">CDF</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Solde mensuel</div>
+                                <div class="stat-value number">${this.formatNumber(balance)}</div>
+                                <div class="stat-subtitle">CDF</div>
+                            </div>
+                            <div class="stat-card warning">
+                                <div class="stat-label">Quantité vendue</div>
+                                <div class="stat-value number">${this.formatNumber(quantity)}</div>
+                                <div class="stat-subtitle">bidons (${this.formatNumber(average)} CDF/jour)</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 2rem;">
+                            <h3 style="margin-bottom: 1rem; font-weight: 700;">Répartition des dépenses</h3>
+                            <div class="table-responsive">
+                                <table>
+                                    <thead>
+                                        <tr>
+                                            <th>Catégorie</th>
+                                            <th>Montant (CDF)</th>
+                                            <th>Pourcentage</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${this.generateExpenseBreakdown(monthExpenses, expense)}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            generateExpenseBreakdown(expenses, total) {
+                const categories = {};
+                expenses.forEach(e => {
+                    categories[e.category] = (categories[e.category] || 0) + e.amount;
+                });
+
+                return Object.entries(categories)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([cat, amount]) => `
+                        <tr>
+                            <td>${cat}</td>
+                            <td class="number">${this.formatNumber(amount)}</td>
+                            <td class="number">${((amount / total) * 100).toFixed(1)}%</td>
+                        </tr>
+                    `).join('');
+            }
+
+            async generateQuarterlyReport() {
+                const year = parseInt(document.getElementById('quarterYear').value);
+                const quarter = parseInt(document.getElementById('quarterSelect').value);
+                
+                const quarterMonths = {
+                    1: ['01', '02', '03'],
+                    2: ['04', '05', '06'],
+                    3: ['07', '08', '09'],
+                    4: ['10', '11', '12']
+                };
+
+                const months = quarterMonths[quarter];
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                const quarterSales = sales.filter(s => {
+                    const sYear = parseInt(s.date.split('-')[0]);
+                    const sMonth = s.date.split('-')[1];
+                    return sYear === year && months.includes(sMonth);
+                });
+
+                const quarterExpenses = expenses.filter(e => {
+                    const eYear = parseInt(e.date.split('-')[0]);
+                    const eMonth = e.date.split('-')[1];
+                    return eYear === year && months.includes(eMonth);
+                });
+
+                const revenue = quarterSales.reduce((sum, s) => sum + s.total, 0);
+                const expense = quarterExpenses.reduce((sum, e) => sum + e.amount, 0);
+                const balance = revenue - expense;
+                const quantity = quarterSales.reduce((sum, s) => sum + s.quantity, 0);
+
+                const content = document.getElementById('quarterlyReportContent');
+                content.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">Rapport T${quarter} ${year}</div>
+                        <div class="stats-grid">
+                            <div class="stat-card success">
+                                <div class="stat-label">Recettes totales</div>
+                                <div class="stat-value number">${this.formatNumber(revenue)}</div>
+                                <div class="stat-subtitle">CDF (${this.formatNumber(revenue / this.settings.exchangeRate)} USD)</div>
+                            </div>
+                            <div class="stat-card danger">
+                                <div class="stat-label">Dépenses totales</div>
+                                <div class="stat-value number">${this.formatNumber(expense)}</div>
+                                <div class="stat-subtitle">CDF</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Solde trimestriel</div>
+                                <div class="stat-value number">${this.formatNumber(balance)}</div>
+                                <div class="stat-subtitle">CDF</div>
+                            </div>
+                            <div class="stat-card warning">
+                                <div class="stat-label">Quantité vendue</div>
+                                <div class="stat-value number">${this.formatNumber(quantity)}</div>
+                                <div class="stat-subtitle">bidons</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            async generateComparisonReport() {
+                const period1 = document.getElementById('compPeriod1').value;
+                const period2 = document.getElementById('compPeriod2').value;
+
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                const p1Sales = sales.filter(s => s.date.startsWith(period1));
+                const p2Sales = sales.filter(s => s.date.startsWith(period2));
+                const p1Expenses = expenses.filter(e => e.date.startsWith(period1));
+                const p2Expenses = expenses.filter(e => e.date.startsWith(period2));
+
+                const p1Revenue = p1Sales.reduce((sum, s) => sum + s.total, 0);
+                const p2Revenue = p2Sales.reduce((sum, s) => sum + s.total, 0);
+                const p1Expense = p1Expenses.reduce((sum, e) => sum + e.amount, 0);
+                const p2Expense = p2Expenses.reduce((sum, e) => sum + e.amount, 0);
+                const p1Balance = p1Revenue - p1Expense;
+                const p2Balance = p2Revenue - p2Expense;
+
+                const revenueDiff = ((p2Revenue - p1Revenue) / p1Revenue * 100) || 0;
+                const expenseDiff = ((p2Expense - p1Expense) / p1Expense * 100) || 0;
+                const balanceDiff = ((p2Balance - p1Balance) / p1Balance * 100) || 0;
+
+                const content = document.getElementById('comparisonReportContent');
+                content.innerHTML = `
+                    <div class="card">
+                        <div class="card-header">Comparaison ${this.formatMonth(period1)} vs ${this.formatMonth(period2)}</div>
+                        <div class="table-responsive">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Indicateur</th>
+                                        <th>${this.formatMonth(period1)}</th>
+                                        <th>${this.formatMonth(period2)}</th>
+                                        <th>Évolution</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Recettes</strong></td>
+                                        <td class="number">${this.formatNumber(p1Revenue)} CDF</td>
+                                        <td class="number">${this.formatNumber(p2Revenue)} CDF</td>
+                                        <td class="number" style="color: ${revenueDiff >= 0 ? 'var(--success)' : 'var(--danger)'}">
+                                            ${revenueDiff >= 0 ? '↗' : '↘'} ${Math.abs(revenueDiff).toFixed(1)}%
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Dépenses</strong></td>
+                                        <td class="number">${this.formatNumber(p1Expense)} CDF</td>
+                                        <td class="number">${this.formatNumber(p2Expense)} CDF</td>
+                                        <td class="number" style="color: ${expenseDiff <= 0 ? 'var(--success)' : 'var(--danger)'}">
+                                            ${expenseDiff >= 0 ? '↗' : '↘'} ${Math.abs(expenseDiff).toFixed(1)}%
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Solde</strong></td>
+                                        <td class="number">${this.formatNumber(p1Balance)} CDF</td>
+                                        <td class="number">${this.formatNumber(p2Balance)} CDF</td>
+                                        <td class="number" style="color: ${balanceDiff >= 0 ? 'var(--success)' : 'var(--danger)'}">
+                                            ${balanceDiff >= 0 ? '↗' : '↘'} ${Math.abs(balanceDiff).toFixed(1)}%
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }
+
+            async exportToExcel() {
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                const wb = XLSX.utils.book_new();
+
+                // Sales sheet
+                const salesData = sales.map(s => ({
+                    Date: s.date,
+                    Quantité: s.quantity,
+                    'Prix unitaire': s.price,
+                    Total: s.total,
+                    Contenant: s.container,
+                    Paiement: s.payment,
+                    Notes: s.notes
+                }));
+                const salesWs = XLSX.utils.json_to_sheet(salesData);
+                XLSX.utils.book_append_sheet(wb, salesWs, 'Ventes');
+
+                // Expenses sheet
+                const expensesData = expenses.map(e => ({
+                    Date: e.date,
+                    Catégorie: e.category,
+                    Montant: e.amount,
+                    Description: e.description,
+                    Notes: e.notes
+                }));
+                const expensesWs = XLSX.utils.json_to_sheet(expensesData);
+                XLSX.utils.book_append_sheet(wb, expensesWs, 'Dépenses');
+
+                XLSX.writeFile(wb, `achuw-water-export-${new Date().toISOString().split('T')[0]}.xlsx`);
+                this.showAlert('✅ Export Excel réussi!', 'success');
+            }
+
+            async exportToPDF() {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+
+                doc.setFontSize(18);
+                doc.text('Achuw Water - Rapport d\'activité', 20, 20);
+
+                doc.setFontSize(12);
+                doc.text(`Date: ${new Date().toLocaleDateString('fr-FR')}`, 20, 30);
+
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                const totalRevenue = sales.reduce((sum, s) => sum + s.total, 0);
+                const totalExpense = expenses.reduce((sum, e) => sum + e.amount, 0);
+                const balance = totalRevenue - totalExpense;
+
+                doc.text(`Recettes totales: ${this.formatNumber(totalRevenue)} CDF`, 20, 50);
+                doc.text(`Dépenses totales: ${this.formatNumber(totalExpense)} CDF`, 20, 60);
+                doc.text(`Solde: ${this.formatNumber(balance)} CDF`, 20, 70);
+
+                doc.save(`achuw-water-rapport-${new Date().toISOString().split('T')[0]}.pdf`);
+                this.showAlert('✅ Export PDF réussi!', 'success');
+            }
+
+            async backupData() {
+                const sales = await this.db.getAll('sales');
+                const expenses = await this.db.getAll('expenses');
+
+                const backup = {
+                    sales,
+                    expenses,
+                    settings: this.settings,
+                    exportDate: new Date().toISOString()
+                };
+
+                const dataStr = JSON.stringify(backup, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `achuw-water-backup-${new Date().toISOString().split('T')[0]}.json`;
+                link.click();
+
+                this.showAlert('✅ Sauvegarde créée!', 'success');
+            }
+
+            importData() {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'application/json';
+                input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = async (event) => {
+                        try {
+                            const backup = JSON.parse(event.target.result);
+                            
+                            for (const sale of backup.sales) {
+                                delete sale.id;
+                                await this.db.add('sales', sale);
+                            }
+                            for (const expense of backup.expenses) {
+                                delete expense.id;
+                                await this.db.add('expenses', expense);
+                            }
+
+                            this.showAlert('✅ Données importées avec succès!', 'success');
+                            await this.refreshDashboard();
+                        } catch (error) {
+                            this.showAlert('❌ Erreur lors de l\'import', 'error');
+                        }
+                    };
+                    reader.readAsText(file);
+                };
+                input.click();
+            }
+
+            async clearAllData() {
+                if (confirm('⚠️ ATTENTION: Cette action est irréversible. Toutes vos données seront supprimées. Voulez-vous continuer?')) {
+                    if (confirm('Êtes-vous absolument certain? Dernière confirmation.')) {
+                        const stores = ['sales', 'expenses'];
+                        for (const storeName of stores) {
+                            const all = await this.db.getAll(storeName);
+                            for (const item of all) {
+                                await this.db.delete(storeName, item.id);
+                            }
+                        }
+                        this.showAlert('✅ Toutes les données ont été effacées', 'success');
+                        await this.refreshDashboard();
+                    }
+                }
+            }
+
+            openExpenseEntry() {
+                this.showPage('entry');
+                setTimeout(() => {
+                    document.querySelector('[onclick="app.switchEntryTab(\'expense\')"]').click();
+                }, 100);
+            }
+
+            showAlert(message, type) {
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type}`;
+                alertDiv.textContent = message;
+                alertDiv.style.position = 'fixed';
+                alertDiv.style.top = '100px';
+                alertDiv.style.right = '20px';
+                alertDiv.style.zIndex = '9999';
+                alertDiv.style.minWidth = '300px';
+                alertDiv.style.animation = 'slideIn 0.3s ease';
+
+                document.body.appendChild(alertDiv);
+
+                setTimeout(() => {
+                    alertDiv.style.animation = 'slideOut 0.3s ease';
+                    setTimeout(() => alertDiv.remove(), 300);
+                }, 3000);
+            }
+
+            formatNumber(num) {
+                return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(num);
+            }
+
+            formatDate(dateStr) {
+                const date = new Date(dateStr);
+                return new Intl.DateTimeFormat('fr-FR', { 
+                    day: '2-digit', 
+                    month: 'long', 
+                    year: 'numeric' 
+                }).format(date);
+            }
+
+            formatDateShort(dateStr) {
+                const date = new Date(dateStr);
+                return new Intl.DateTimeFormat('fr-FR', { 
+                    day: '2-digit', 
+                    month: 'short'
+                }).format(date);
+            }
+
+            formatMonth(monthStr) {
+                const [year, month] = monthStr.split('-');
+                const date = new Date(year, month - 1);
+                return new Intl.DateTimeFormat('fr-FR', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                }).format(date);
+            }
+
+            registerServiceWorker() {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(() => console.log('Service Worker registered'))
+                        .catch(err => console.log('Service Worker registration failed:', err));
+                }
+            }
+        }
+
+        // Initialize app
+        const app = new AchuwWaterApp();
+        document.addEventListener('DOMContentLoaded', () => app.init());
+
+        // Animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(400px); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(400px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
